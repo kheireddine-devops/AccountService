@@ -14,12 +14,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -41,7 +43,7 @@ public class AccountCommandsController implements IAccountCommandsController {
         return this.commandGateway.send(addCustomerAccountCommand);
     }
 
-    @PostMapping({"/auth"})
+    @Override
     public ResponseEntity<AuthResponseDTO> auth(Authentication authentication) {
         Instant instant = Instant.now();
         String scope = authentication.getAuthorities().stream().map(grantedAuthority -> grantedAuthority.getAuthority()).collect(Collectors.joining(","));
@@ -59,5 +61,14 @@ public class AccountCommandsController implements IAccountCommandsController {
         authResponseDTO.setValid(true);
         authResponseDTO.setToken(jwtAccessToken);
         return new ResponseEntity<>(authResponseDTO, HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<Map<String,Object>> currenUser(Authentication authentication) {
+        Map<String,Object> currentUser = Map.of(
+                "username", authentication.getName(),
+                "roles", authentication.getAuthorities()
+        );
+        return new ResponseEntity<>(currentUser,HttpStatus.OK);
     }
 }

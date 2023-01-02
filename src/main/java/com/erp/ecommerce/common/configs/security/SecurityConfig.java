@@ -16,6 +16,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -33,10 +35,10 @@ public class SecurityConfig {
     @Bean
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
         return new InMemoryUserDetailsManager(
-                User.withUsername("admin").password("{noop}admin").authorities("ROLE_ADMIN","ROLE_STAFF").build(),
-                User.withUsername("customer").password("{noop}customer").authorities("ROLE_CUSTOMER").build(),
-                User.withUsername("storekeeper").password("{noop}storekeeper").authorities("ROLE_STAFF","ROLE_STOREKEEPER").build(),
-                User.withUsername("customer_service").password("{noop}customer_service").authorities("ROLE_STAFF","ROLE_CUSTOMER_SERVICE").build()
+                User.withUsername("admin").password(passwordEncoder().encode("admin")).authorities("ADMIN","STAFF").build(),
+                User.withUsername("customer").password(passwordEncoder().encode("customer")).authorities("CUSTOMER").build(),
+                User.withUsername("storekeeper").password(passwordEncoder().encode("storekeeper")).authorities("STAFF","STOREKEEPER").build(),
+                User.withUsername("customer_service").password(passwordEncoder().encode("customer_service")).authorities("STAFF","CUSTOMER_SERVICE").build()
         );
     }
 
@@ -61,6 +63,11 @@ public class SecurityConfig {
     @Bean
     JwtDecoder jwtDecoder() {
         return NimbusJwtDecoder.withPublicKey(this.keysConfigs.publicKey()).build();
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
 }

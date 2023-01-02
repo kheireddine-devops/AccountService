@@ -19,6 +19,13 @@ public class AccountService implements IAccountService {
     private CustomerRepository customerRepository;
 
     @Override
+    @Transactional
+    public Customer addCustomer(Customer customer) {
+        Customer savedCustomer = this.customerRepository.save(customer);
+        return savedCustomer;
+    }
+
+    @Override
     public List<Customer> getAllCustomers() {
         List<Customer> customers = this.customerRepository.findAll();
         return customers;

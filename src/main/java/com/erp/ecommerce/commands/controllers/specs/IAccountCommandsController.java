@@ -1,5 +1,6 @@
 package com.erp.ecommerce.commands.controllers.specs;
 
+import com.erp.ecommerce.common.dtos.requests.AuthRequestDTO;
 import com.erp.ecommerce.common.dtos.requests.CustomerAccountRequestDTO;
 import com.erp.ecommerce.common.dtos.responses.AuthResponseDTO;
 import com.erp.ecommerce.common.models.entities.Customer;
@@ -14,8 +15,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public interface IAccountCommandsController {
-    @PostMapping({"/auth"})
+    @PostMapping({"/basic/auth"})
     ResponseEntity<AuthResponseDTO> auth(Authentication authentication);
+
+    @PostMapping({"/auth"})
+    ResponseEntity<AuthResponseDTO> auth(@RequestBody AuthRequestDTO authRequestDTO);
 
     @GetMapping({"/profile"})
     ResponseEntity<Map<String,Object>> currenUser(Authentication authentication);

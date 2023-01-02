@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @Getter @Setter @NoArgsConstructor @ToString
 @Entity
-public class Account implements Serializable {
+public class Account extends Auditable<UUID> implements Serializable {
     @Id
 //    @GeneratedValue(generator = "UUID")
 //    @GenericGenerator(

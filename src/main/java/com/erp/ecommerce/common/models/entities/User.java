@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @Getter @Setter @NoArgsConstructor @ToString
 @MappedSuperclass
-public abstract class User implements Serializable {
+public abstract class User extends Auditable<UUID> implements Serializable {
 //    @Id
 //    @GeneratedValue(generator = "UUID")
 //    @GenericGenerator(

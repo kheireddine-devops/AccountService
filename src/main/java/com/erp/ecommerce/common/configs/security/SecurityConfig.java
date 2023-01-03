@@ -36,6 +36,8 @@ public class SecurityConfig {
 
     @Autowired
     private RsaKeysConfigs keysConfigs;
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
 
     @Bean
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
@@ -57,7 +59,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) throws Exception {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(this.passwordEncoder());
-        authenticationProvider.setUserDetailsService(this.inMemoryUserDetailsManager());
+        authenticationProvider.setUserDetailsService(this.userDetailsService);
         return new ProviderManager(authenticationProvider);
     }
 
@@ -65,7 +67,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
         return httpSecurity.csrf(csrf -> csrf.disable())
-                .authorizeRequests(auth -> auth.antMatchers("/accounts/auth").permitAll())
+                .authorizeRequests(auth -> auth.antMatchers("/accounts/auth","/accounts/customers").permitAll())
                 .authorizeRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)

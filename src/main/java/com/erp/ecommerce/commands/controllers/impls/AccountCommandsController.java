@@ -2,15 +2,18 @@ package com.erp.ecommerce.commands.controllers.impls;
 
 import com.erp.ecommerce.commands.controllers.specs.IAccountCommandsController;
 import com.erp.ecommerce.common.actions.commands.AccountCommands;
-import com.erp.ecommerce.common.configs.security.GrantTypeEnum;
+import com.erp.ecommerce.common.configs.exceptions.ExceptionEntity;
+import com.erp.ecommerce.common.configs.exceptions.ExceptionsType;
+import com.erp.ecommerce.common.configs.exceptions.customs.ConflictException;
+import com.erp.ecommerce.common.configs.exceptions.customs.NotFoundException;
 import com.erp.ecommerce.common.dtos.mappers.AccountsMapper;
 import com.erp.ecommerce.common.dtos.requests.AuthRequestDTO;
 import com.erp.ecommerce.common.dtos.requests.CustomerAccountRequestDTO;
 import com.erp.ecommerce.common.dtos.responses.AuthResponseDTO;
-import com.nimbusds.jwt.JWT;
 import lombok.extern.log4j.Log4j2;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,12 +23,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jwt.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -49,6 +50,12 @@ public class AccountCommandsController implements IAccountCommandsController {
     private JwtDecoder jwtDecoder;
     @Autowired
     private AccountsMapper accountsMapper;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private int JWT_REFRESH_TOKEN_EXPIRATION = 30;
+    @Value("${jwt.access-token.expiration}")
+    private int JWT_ACCESS_TOKEN_EXPIRATION = 5;
+
     @Override
     public CompletableFuture<String> addCustomer(CustomerAccountRequestDTO customerAccountRequestDTO) {
         AccountCommands.AddCustomerAccountCommand addCustomerAccountCommand = accountsMapper.fromCustomerAccountRequestDTOToAddCustomerAccountCommand(customerAccountRequestDTO);
@@ -116,7 +123,7 @@ public class AccountCommandsController implements IAccountCommandsController {
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .subject(scope)
                 .issuedAt(instant)
-                .expiresAt(instant.plus(authRequestDTO.isWithRefreshToken() ? 5 : 30, ChronoUnit.MINUTES))
+                .expiresAt(instant.plus(authRequestDTO.isWithRefreshToken() ? JWT_ACCESS_TOKEN_EXPIRATION : JWT_REFRESH_TOKEN_EXPIRATION, ChronoUnit.MINUTES))
                 .issuer("EcommerceService")
                 .claim("scope",scope)
                 .build();
@@ -131,7 +138,7 @@ public class AccountCommandsController implements IAccountCommandsController {
             JwtClaimsSet jwtClaimsSetRefreshToken = JwtClaimsSet.builder()
                     .subject(subject)
                     .issuedAt(instant)
-                    .expiresAt(instant.plus(30, ChronoUnit.MINUTES))
+                    .expiresAt(instant.plus(JWT_REFRESH_TOKEN_EXPIRATION, ChronoUnit.MINUTES))
                     .issuer("EcommerceService")
                     .build();
 

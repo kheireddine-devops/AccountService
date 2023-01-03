@@ -41,4 +41,14 @@ public class AccountService implements IAccountService {
         List<Account> accounts = this.accountRepository.findAll();
         return accounts;
     }
+
+    @Override
+    public boolean existsAccountByUsername(String username) {
+        return this.accountRepository.existsAccountByUsername(username);
+    }
+
+    @Override
+    public boolean existsAccountByEmail(String email) {
+        return this.accountRepository.existsAccountByEmail(email);
+    }
 }

@@ -10,4 +10,6 @@ public interface IAccountService {
     List<Customer> getAllCustomers();
 
     List<Account> getAllAccounts();
+    boolean existsAccountByUsername(String username);
+    boolean existsAccountByEmail(String email);
 }

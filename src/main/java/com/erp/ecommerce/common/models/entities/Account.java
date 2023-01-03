@@ -7,14 +7,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Getter @Setter @NoArgsConstructor @ToString
 @Entity
-public class Account extends Auditable<UUID> implements Serializable {
+public class Account extends Auditable<UUID> implements UserDetails, Serializable {
     @Id
 //    @GeneratedValue(generator = "UUID")
 //    @GenericGenerator(
@@ -43,4 +48,29 @@ public class Account extends Auditable<UUID> implements Serializable {
     @Column(length = 21, nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountRoleEnum role;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(this.role.name()));
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }

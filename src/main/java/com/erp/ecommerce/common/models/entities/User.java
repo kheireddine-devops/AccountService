@@ -9,6 +9,7 @@ import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -26,6 +27,7 @@ public abstract class User extends Auditable<UUID> implements Serializable {
 //    )
 //    private UUID userId;
     @Id
+    @Type(type="uuid-char")
     private UUID userId;
 
     @Column(length = 25, nullable = false)

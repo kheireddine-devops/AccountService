@@ -2,6 +2,7 @@ package com.erp.ecommerce.common.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -26,6 +27,7 @@ public abstract class Auditable<U> {
     @JsonIgnore
     @CreatedBy
     @Column(nullable = false, updatable = false)
+    @Type(type="uuid-char")
     private U createdBy;
 
     @JsonIgnore
@@ -34,5 +36,6 @@ public abstract class Auditable<U> {
 
     @JsonIgnore
     @LastModifiedBy
+    @Type(type="uuid-char")
     private U lastModifiedBy;
 }

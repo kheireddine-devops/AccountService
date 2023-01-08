@@ -1,5 +1,8 @@
 package com.erp.ecommerce.common.configs.security;
 
+import com.erp.ecommerce.common.configs.exceptions.ExceptionsType;
+import com.erp.ecommerce.common.configs.exceptions.customs.NotFoundException;
+import com.erp.ecommerce.common.repositories.AccountRepository;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -9,6 +12,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -36,7 +40,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final RsaKeysConfigs keysConfigs;
-    private final UserDetailsServiceImpl userDetailsService;
+    private final AccountRepository accountRepository;
 
     @Bean
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
@@ -49,10 +53,17 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Primary
+    public UserDetailsService userDetailsService() {
+        return username -> accountRepository.findByUsernameOrEmail(username,username)
+                .orElseThrow(() -> new NotFoundException(ExceptionsType.AUTH_ACTION_USERNAME_OR_EMAIL_NOT_FOUND));
+    }
+
+    @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) throws Exception {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(this.passwordEncoder());
-        authenticationProvider.setUserDetailsService(this.userDetailsService);
+        authenticationProvider.setUserDetailsService(this.userDetailsService());
         return new ProviderManager(authenticationProvider);
     }
 
@@ -60,7 +71,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
         return httpSecurity.csrf(csrf -> csrf.disable())
-                .authorizeRequests(auth -> auth.antMatchers("/accounts/auth","/accounts/customers").permitAll())
+                .authorizeRequests(auth -> auth.antMatchers(EndPointsConfigs.AUTH_WHITELIST).permitAll())
                 .authorizeRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)

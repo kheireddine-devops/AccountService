@@ -6,15 +6,14 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
@@ -32,12 +31,12 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    private RsaKeysConfigs keysConfigs;
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    private final RsaKeysConfigs keysConfigs;
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Bean
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
@@ -48,12 +47,6 @@ public class SecurityConfig {
                 User.withUsername("customer_service").password(passwordEncoder().encode("customer_service")).authorities("STAFF","CUSTOMER_SERVICE").build()
         );
     }
-
-    // OLD METHOD - INADVISABLE
-//    @Bean
-//    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-//        return authenticationConfiguration.getAuthenticationManager();
-//    }
 
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) throws Exception {

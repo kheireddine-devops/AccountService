@@ -1,8 +1,10 @@
 package com.erp.ecommerce.common.configs.security;
 
+import com.erp.ecommerce.common.configs.exceptions.ExceptionsType;
+import com.erp.ecommerce.common.configs.exceptions.customs.NotFoundException;
 import com.erp.ecommerce.common.models.entities.Account;
 import com.erp.ecommerce.common.repositories.AccountRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,22 +13,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Primary
+@RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
-
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         Account existingAccount = this.accountRepository.findByUsernameOrEmail(username,username)
-                .orElseThrow(() -> new RuntimeException("ACCOUNT-NOT-FOUND"));
-
-//        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-//        authorities.add(new SimpleGrantedAuthority(existingAccount.getRole().toString()));
-//        Account account = new Account();
-//        account.setAccountId(existingAccount.getAccountId());
-//        return account;
+                .orElseThrow(() -> new NotFoundException(ExceptionsType.AUTH_ACTION_USERNAME_OR_EMAIL_NOT_FOUND));
 
         return existingAccount;
     }

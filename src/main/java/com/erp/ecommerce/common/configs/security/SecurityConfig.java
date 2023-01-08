@@ -2,6 +2,7 @@ package com.erp.ecommerce.common.configs.security;
 
 import com.erp.ecommerce.common.configs.exceptions.ExceptionsType;
 import com.erp.ecommerce.common.configs.exceptions.customs.NotFoundException;
+import com.erp.ecommerce.common.configs.security.authentication.CustomJwtAuthenticationConverter;
 import com.erp.ecommerce.common.repositories.AccountRepository;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -23,14 +26,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -38,6 +39,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Collection;
 
 @Configuration
 @EnableWebSecurity
@@ -45,6 +47,7 @@ import java.security.interfaces.RSAPublicKey;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final AccountRepository accountRepository;
+    private final CustomJwtAuthenticationConverter customJwtAuthenticationConverter;
     @Value("${jwt.rsa.public-key}") private RSAPublicKey JWT_RSA_PUBLIC_KEY;
     @Value("${jwt.rsa.private-key}") private RSAPrivateKey JWT_RSA_PRIVATE_KEY;
     @Value("${jwt.mapping.authority-prefix}") private String AUTHORITY_PREFIX;
@@ -84,20 +87,27 @@ public class SecurityConfig {
                 .authorizeRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+                .oauth2ResourceServer(oauth2 -> {
+                    oauth2.jwt().jwtAuthenticationConverter(this.customJwtAuthenticationConverter);
+                })
                 .httpBasic(Customizer.withDefaults())
                 .build();
     }
 
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthoritiesClaimName(AUTHORITIES_CLAIM_NAME);
-        grantedAuthoritiesConverter.setAuthorityPrefix(AUTHORITY_PREFIX);
-
+    public Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(this.jwtGrantedAuthoritiesConverter());
         jwtAuthenticationConverter.setPrincipalClaimName(PRINCIPAL_CLAIM_NAME);
         return jwtAuthenticationConverter;
+    }
+
+    @Bean
+    public Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter() {
+        JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
+        converter.setAuthoritiesClaimName(AUTHORITIES_CLAIM_NAME);
+        converter.setAuthorityPrefix(AUTHORITY_PREFIX);
+        return converter;
     }
 
     @Bean

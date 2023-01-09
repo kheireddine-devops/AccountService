@@ -1,8 +1,8 @@
 package com.erp.ecommerce;
 
-import com.erp.ecommerce.common.configs.AuditorAwareImpl;
+import com.erp.ecommerce.common.configs.jpa.AuditorAwareImpl;
+import com.erp.ecommerce.common.configs.openapi.SwaggerProperty;
 import com.erp.ecommerce.common.configs.security.JwtProperty;
-import com.erp.ecommerce.common.configs.security.RsaKeysConfigs;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @SpringBootApplication
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
-@EnableConfigurationProperties({RsaKeysConfigs.class, JwtProperty.class})
+@EnableConfigurationProperties({JwtProperty.class, SwaggerProperty.class})
 public class AccountServiceApplication {
 
     public static void main(String[] args) {

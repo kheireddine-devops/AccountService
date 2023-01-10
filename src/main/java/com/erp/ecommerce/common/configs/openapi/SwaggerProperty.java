@@ -13,8 +13,7 @@ public record SwaggerProperty(Info info,boolean enable) {
             String licenseUrl,
             String termsOfServiceUrl,
             Contact contact,
-            String basePackage,
-            String groupName
+            String basePackage
     ){
         public record Contact(String email,String url, String name){}
     }

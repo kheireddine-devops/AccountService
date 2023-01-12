@@ -8,13 +8,13 @@ import com.erp.ecommerce.common.models.enums.AccountRoleEnum;
 import com.erp.ecommerce.common.models.enums.AccountStatusEnum;
 import com.erp.ecommerce.common.services.specs.IAccountService;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.util.NumberUtils;
 
 import java.util.UUID;
 
@@ -27,13 +27,12 @@ public class AccountAggregate {
     protected AccountAggregate() {}
 
     @CommandHandler
-    public AccountAggregate(AccountCommands.AddCustomerAccountCommand command,IAccountService accountService) {
+    public AccountAggregate(AccountCommands.CreateCustomerAccountCommand command/*,IAccountService accountService*/) {
         log.info(command);
-        this.accountAggregateId = command.customerId();
-        boolean existEmail = accountService.existsAccountByEmail(command.email());
-        if(existEmail) throw new ConflictException(ExceptionsType.CREATE_ACCOUNT_ACTION_EMAIL_ALREADY_USED);
+//        boolean existEmail = accountService.existsAccountByEmail(command.email());
+//        if(existEmail) throw new ConflictException(ExceptionsType.CREATE_ACCOUNT_ACTION_EMAIL_ALREADY_USED);
 
-        AggregateLifecycle.apply(new AccountEvents.AddCustomerAccountEvent(
+        AggregateLifecycle.apply(new AccountEvents.CustomerAccountCreatedEvent(
                 command.customerId(),
                 command.firstname(),
                 command.lastname(),
@@ -47,8 +46,23 @@ public class AccountAggregate {
     }
 
     @EventSourcingHandler
-    public void on(AccountEvents.AddCustomerAccountEvent event) {
+    public void on(AccountEvents.CustomerAccountCreatedEvent event) {
         log.info(event);
         this.accountAggregateId = event.customerId();
+        AggregateLifecycle.apply(new AccountEvents.AccountActivatedEvent(event.customerId()));
+    }
+
+    @EventSourcingHandler
+    public void on(AccountEvents.AccountActivatedEvent event) {
+        log.info(event);
+        AggregateLifecycle.apply(new AccountEvents.EmailVerificationCodeSentEvent(
+                event.accountId(),
+                NumberUtils.parseNumber(RandomStringUtils.random(6,false, true), Integer.class)
+        ));
+    }
+
+    @EventSourcingHandler
+    public void on(AccountEvents.EmailVerificationCodeSentEvent event) {
+        log.info(event);
     }
 }

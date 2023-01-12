@@ -8,7 +8,8 @@ import java.util.Date;
 import java.util.UUID;
 
 public interface AccountEvents {
-    record AddCustomerAccountEvent(UUID customerId, String firstname, String lastname, GenderEnum gender, Date dateOfBirth, String email, String password, AccountRoleEnum role, AccountStatusEnum status) {};
-    record ActivateCustomerAccountEvent(UUID customerId) {};
-    record SendVerificationEmailEvent(UUID accountId, short verificationCode) {};
+    record AdminAccountCreatedEvent(UUID adminId, String firstname, String lastname, GenderEnum gender, Date dateOfBirth, String email, String password, AccountRoleEnum role, AccountStatusEnum status) {};
+    record CustomerAccountCreatedEvent(UUID customerId, String firstname, String lastname, GenderEnum gender, Date dateOfBirth, String email, String password, AccountRoleEnum role, AccountStatusEnum status) {};
+    record AccountActivatedEvent(UUID accountId) {};
+    record EmailVerificationCodeSentEvent(UUID accountId, int verificationCode) {};
 }

@@ -50,7 +50,10 @@ public class Account extends Auditable<UUID> implements UserDetails, Serializabl
     @Column(length = 21, nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountRoleEnum role;
-    
+
+    @Embedded
+    private EmailValidation emailValidation;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(this.role.name()));

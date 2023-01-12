@@ -12,13 +12,11 @@ public class UniqueEmailValidator implements ConstraintValidator<UniqueEmail,Str
     @Override
     public void initialize(UniqueEmail constraintAnnotation) {
         ConstraintValidator.super.initialize(constraintAnnotation);
-        System.out.println("BLOCK INITIALIZE - UNIQUE-EMAIL VALIDATOR");
     }
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext constraintValidatorContext) {
-        System.out.println("BLOCK IS-VALID - UNIQUE-EMAIL VALIDATOR");
         if(value == null || value.isEmpty() || value.isBlank()) return false;
-        return this.accountService.existsAccountByEmail(value);
+        return !this.accountService.existsAccountByEmail(value);
     }
 }

@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface AccountRepository extends JpaRepository<Account, UUID>, QuerydslPredicateExecutor<Account> /*, QuerydslBinderCustomizer<Account>*/ {
+public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByUsernameOrEmail(String username,String email);
     boolean existsAccountByUsername(String username);
     boolean existsAccountByEmail(String email);

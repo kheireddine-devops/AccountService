@@ -20,10 +20,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CustomJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
-    private final AccountRepository accountRepository;
+//    private final AccountRepository accountRepository;
     @Value("${jwt.mapping.authority-prefix}") private String AUTHORITY_PREFIX;
     @Value("${jwt.mapping.authorities.claim-name}") private String AUTHORITIES_CLAIM_NAME;
     @Value("${jwt.mapping.principal.claim-name}") private String PRINCIPAL_CLAIM_NAME;
+    @Value("${jwt.mapping.user.claim-name}") private String USER_CLAIM_NAME;
 
     @Override
     public AbstractAuthenticationToken convert(Jwt source) {
@@ -34,9 +35,9 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
                 .map(s -> new SimpleGrantedAuthority(AUTHORITY_PREFIX+s))
                 .collect(Collectors.toList());
 
-        Optional<Account> accountOptional = this.accountRepository.findByUsernameOrEmail(subject,subject);
-        Account account = accountOptional.orElse(null);
+//        Optional<Account> accountOptional = this.accountRepository.findByUsernameOrEmail(subject,subject);
+//        Account account = accountOptional.orElse(null);
 
-        return new CustomAuthenticationToken(source,authorities,subject, Map.of("uid", account.getAccountId()));
+        return new CustomJwtAuthenticationToken(source,authorities,subject, Map.of(USER_CLAIM_NAME, source.getClaimAsString(USER_CLAIM_NAME)));
     }
 }

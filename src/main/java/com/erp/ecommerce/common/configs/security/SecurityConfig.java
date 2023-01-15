@@ -1,43 +1,58 @@
 package com.erp.ecommerce.common.configs.security;
 
+import com.erp.ecommerce.common.configs.exceptions.ExceptionsType;
+import com.erp.ecommerce.common.configs.exceptions.customs.NotFoundException;
+import com.erp.ecommerce.common.configs.security.authentication.CustomJwtAuthenticationConverter;
+import com.erp.ecommerce.common.repositories.AccountRepository;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Collection;
+
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
-
-    @Autowired
-    private RsaKeysConfigs keysConfigs;
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    private final AccountRepository accountRepository;
+    private final CustomJwtAuthenticationConverter customJwtAuthenticationConverter;
+    @Value("${jwt.rsa.public-key}") private RSAPublicKey JWT_RSA_PUBLIC_KEY;
+    @Value("${jwt.rsa.private-key}") private RSAPrivateKey JWT_RSA_PRIVATE_KEY;
+    @Value("${jwt.mapping.authority-prefix}") private String AUTHORITY_PREFIX;
+    @Value("${jwt.mapping.authorities.claim-name}") private String AUTHORITIES_CLAIM_NAME;
+    @Value("${jwt.mapping.principal.claim-name}") private String PRINCIPAL_CLAIM_NAME;
 
     @Bean
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
@@ -49,17 +64,18 @@ public class SecurityConfig {
         );
     }
 
-    // OLD METHOD - INADVISABLE
-//    @Bean
-//    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-//        return authenticationConfiguration.getAuthenticationManager();
-//    }
+    @Bean
+    @Primary
+    public UserDetailsService userDetailsService() {
+        return username -> accountRepository.findByUsernameOrEmail(username,username)
+                .orElseThrow(() -> new NotFoundException(ExceptionsType.AUTH_ACTION_USERNAME_OR_EMAIL_NOT_FOUND));
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) throws Exception {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(this.passwordEncoder());
-        authenticationProvider.setUserDetailsService(this.userDetailsService);
+        authenticationProvider.setUserDetailsService(this.userDetailsService());
         return new ProviderManager(authenticationProvider);
     }
 
@@ -67,24 +83,43 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
         return httpSecurity.csrf(csrf -> csrf.disable())
-                .authorizeRequests(auth -> auth.antMatchers("/accounts/auth","/accounts/customers").permitAll())
+                .authorizeRequests(auth -> auth.antMatchers(EndPointsConfigs.AUTH_WHITELIST).permitAll())
                 .authorizeRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+                .oauth2ResourceServer(oauth2 -> {
+                    oauth2.jwt().jwtAuthenticationConverter(this.customJwtAuthenticationConverter);
+                })
                 .httpBasic(Customizer.withDefaults())
                 .build();
     }
 
     @Bean
+    public Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(this.jwtGrantedAuthoritiesConverter());
+        jwtAuthenticationConverter.setPrincipalClaimName(PRINCIPAL_CLAIM_NAME);
+        return jwtAuthenticationConverter;
+    }
+
+    @Bean
+    public Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter() {
+        JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
+        converter.setAuthoritiesClaimName(AUTHORITIES_CLAIM_NAME);
+        converter.setAuthorityPrefix(AUTHORITY_PREFIX);
+        return converter;
+    }
+
+    @Bean
     JwtEncoder jwtEncoder() {
-        JWK jwk = new RSAKey.Builder(this.keysConfigs.publicKey()).privateKey(this.keysConfigs.privateKey()).build();
+        JWK jwk = new RSAKey.Builder(JWT_RSA_PUBLIC_KEY).privateKey(JWT_RSA_PRIVATE_KEY).build();
         JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwkSource);
     }
 
     @Bean
     JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withPublicKey(this.keysConfigs.publicKey()).build();
+        return NimbusJwtDecoder.withPublicKey(JWT_RSA_PUBLIC_KEY).build();
     }
 
     @Bean

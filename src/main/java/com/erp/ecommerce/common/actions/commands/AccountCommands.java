@@ -9,7 +9,17 @@ import java.util.Date;
 import java.util.UUID;
 
 public interface AccountCommands {
-    record AddCustomerAccountCommand(@TargetAggregateIdentifier UUID customerId, String firstname, String lastname, GenderEnum gender, Date dateOfBirth, String email, String password, AccountRoleEnum role, AccountStatusEnum status) {};
-    record ActivateCustomerAccountCommand(@TargetAggregateIdentifier UUID customerId) {};
-    record SendVerificationEmailCommand(@TargetAggregateIdentifier UUID accountId, short verificationCode) {};
+    record CreateAdminAccountCommand(@TargetAggregateIdentifier UUID adminId, String firstname, String lastname, GenderEnum gender, Date dateOfBirth, String email, String password) {
+        public CreateAdminAccountCommand {
+            adminId = UUID.randomUUID();
+        }
+    };
+
+    record CreateCustomerAccountCommand(@TargetAggregateIdentifier UUID customerId, String firstname, String lastname, GenderEnum gender, Date dateOfBirth, String email, String password) {
+        public CreateCustomerAccountCommand {
+            customerId = UUID.randomUUID();
+        }
+    };
+    record ActivateAccountCommand(@TargetAggregateIdentifier UUID accountId) {};
+    record SendEmailVerificationCodeCommand(@TargetAggregateIdentifier UUID accountId, short verificationCode) {};
 }

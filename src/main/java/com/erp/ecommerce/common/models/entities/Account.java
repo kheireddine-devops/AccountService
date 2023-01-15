@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Type;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,8 +27,9 @@ public class Account extends Auditable<UUID> implements UserDetails, Serializabl
 //            name = "UUID",
 //            strategy = "org.hibernate.id.UUIDGenerator"
 //    )
-    @GeneratedValue
+//    @GeneratedValue
     @Column(name = "account_id")
+    @Type(type="uuid-char")
     private UUID accountId;
 
     @Column(length = 30, nullable = false, unique = true)
@@ -48,6 +50,9 @@ public class Account extends Auditable<UUID> implements UserDetails, Serializabl
     @Column(length = 21, nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountRoleEnum role;
+
+    @Embedded
+    private EmailValidation emailValidation;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

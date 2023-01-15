@@ -1,18 +1,9 @@
 package com.erp.ecommerce.common.dtos.requests;
 
-import com.erp.ecommerce.common.configs.security.GrantTypeEnum;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
-import java.io.Serializable;
-
-@Getter @Setter @NoArgsConstructor @ToString
-public class AuthRequestDTO implements Serializable {
-    private GrantTypeEnum grantType = GrantTypeEnum.PASSWORD;
-    private boolean withRefreshToken = false;
-    private String refreshToken;
-    private String username;
-    private String password;
+public interface AuthRequestDTO {
+    record UsernamePassword(@NotNull @NotBlank String username, @NotNull @NotBlank String password, boolean withRefreshToken){}
+    record RefreshToken(@NotNull @NotBlank String refreshToken){}
 }
